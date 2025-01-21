@@ -1,46 +1,64 @@
 import React, { useState, useEffect } from 'react';
-
 import { Input, Select, Button, Table, message, Form } from 'antd';
 import axios from '../utils/axios';
 
 const Cars = () => {
   const [categories, setCategories] = useState([]);
   const [cars, setCars] = useState([]);
+  const [totalCars, setTotalCars] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [newCar, setNewCar] = useState({ model: '', make: '', color: '', registrationNo: '', category: '' });
 
   useEffect(() => {
-    axios.get('/categories/get', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    }).then(response => {
-      setCategories(response?.data);
-    }).catch (err => {
-     message.error('Error fetching category');
-    }); 
+    fetchCategories();
+    fetchCars(currentPage, pageSize);
+  }, [currentPage, pageSize]);
 
-    axios.get('/cars/get', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    }).then(response => {
-      setCars(response?.data);
-    }).catch (err => {
-        message.error('Error fetching Cars');
-       }) 
-    ;
-  }, []);
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get('/categories/get', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      setCategories(response?.data?.categories);
+    } catch (err) {
+      message.error('Error fetching categories');
+    }
+  };
 
-  const handleCarSubmit = (e) => {
+  const fetchCars = async (page, size) => {
+    try {
+      const response = await axios.get(`/cars/get?page=${page}&size=${size}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      setCars(response?.data?.cars);
+      setTotalCars(response?.data?.totalCars);
+    } catch (err) {
+      message.error('Error fetching cars');
+    }
+  };
+
+  const handleCarSubmit = async (e) => {
     e.preventDefault();
-    axios.post('/cars/create', newCar, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    }).then(response => {
-    const categoryObject = categories.find(category => category._id === newCar.category);
-    const newCarWithCategory = { ...response?.data, category: categoryObject };
-    setCars([...cars, newCarWithCategory]);
-    setNewCar({ model: '', make: '', color: '', registrationNo: '', category: '' });
-    message.success('Car added successfully!');
-    }).catch(error => {
+    try {
+      const response = await axios.post('/cars/create', newCar, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      const categoryObject = categories.find(category => category._id === newCar.category);
+      const newCarWithCategory = { ...response?.data, category: categoryObject };
+      setCars([...cars, newCarWithCategory]);
+      setNewCar({ model: '', make: '', color: '', registrationNo: '', category: '' });
+      message.success('Car added successfully!');
+      fetchCars(currentPage, pageSize); 
+    } catch (error) {
       console.error('Error adding car:', error);
       message.error('Error adding car');
-    });
+    }
+  };
+
+  const handleTableChange = (pagination) => {
+    setCurrentPage(pagination.current);
+    setPageSize(pagination.pageSize);
   };
 
   const columns = [
@@ -68,7 +86,7 @@ const Cars = () => {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
-      render: (category) => category.name,
+      render: (category) => category?.name || 'N/A',
     },
   ];
 
@@ -135,7 +153,13 @@ const Cars = () => {
         columns={columns}
         dataSource={cars}
         rowKey="_id"
-        pagination={{ pageSize: 5 }}
+        pagination={{
+          current: currentPage,
+          pageSize: pageSize,
+          total: totalCars,
+          showSizeChanger: true,
+        }}
+        onChange={handleTableChange}
         style={{ marginTop: 20 }}
       />
     </div>

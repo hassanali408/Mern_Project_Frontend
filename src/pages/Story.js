@@ -6,22 +6,26 @@ const Story = () => {
   const [prompt, setPrompt] = useState('');
   const [story, setStory] = useState('');
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
+  const [totalStories, setTotalStories] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const fetchHistory = async (page, size) => {
+    try {
+      const response = await axios.get(`/stories/get?page=${page}&size=${size}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      setHistory(response?.data?.stories);
+      setTotalStories(response?.data?.totalStories);
+    } catch (err) {
+      message.error('Error fetching story history');
+    }
+  };
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const response = await axios.get('/stories/get', {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-          });
-        setHistory(response?.data);
-      } catch (err) {
-        message.error('Error fetching story history');
-      }
-    };
-
-    fetchHistory();
-  }, []);
+    fetchHistory(currentPage, pageSize);
+  }, [currentPage, pageSize]);
 
   const handleSubmit = async () => {
     try {
@@ -30,19 +34,28 @@ const Story = () => {
         return;
       }
 
-      setLoading(true); 
-      const response = await axios.post('stories/generate-story', { prompt }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
+      setLoading(true);
+      const response = await axios.post(
+        'stories/generate-story',
+        { prompt },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }
+      );
       setStory(response.data.story);
 
-      setHistory([...history, { prompt, story: response.data.story }]);
+      fetchHistory(currentPage, pageSize);
       message.success('Story generated successfully!');
     } catch (err) {
       message.error('Error generating story');
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
+  };
+
+  const handleTableChange = (pagination) => {
+    setCurrentPage(pagination.current);
+    setPageSize(pagination.pageSize);
   };
 
   const columns = [
@@ -55,7 +68,8 @@ const Story = () => {
       title: 'Generated Story',
       dataIndex: 'story',
       key: 'story',
-      render: (text) => <p>{text.length > 100 ? `${text.substring(0, 100)}...` : text}</p>,
+      render: (text) =>
+        <p>{text.length > 100 ? `${text.substring(0, 100)}...` : text}</p>,
     },
   ];
 
@@ -74,7 +88,7 @@ const Story = () => {
       <Button
         type="primary"
         onClick={handleSubmit}
-        loading={loading} 
+        loading={loading}
         style={{ marginBottom: '20px' }}
       >
         Generate Story
@@ -92,11 +106,21 @@ const Story = () => {
         columns={columns}
         dataSource={history}
         rowKey="createdAt"
-        pagination={{ pageSize: 5 }}
+        pagination={{
+          current: currentPage,
+          pageSize,
+          total: totalStories,
+          showSizeChanger: true,
+          onChange: (page, pageSize) => {
+            setCurrentPage(page);
+            setPageSize(pageSize);
+          },
+        }}
+        onChange={handleTableChange}
         style={{ marginTop: '20px' }}
       />
     </div>
   );
-}
+};
 
 export default Story;
