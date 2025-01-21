@@ -9,7 +9,7 @@ const Dashboard = () => {
     axios.get('/cars/get', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     })
-      .then(res => setCarCount(res.data.length))
+      .then(res => setCarCount(res?.data?.cars?.length))
       .catch(err => console.error(err));
   }, []);
 
