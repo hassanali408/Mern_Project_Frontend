@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Input, Select, Button, Table, message, Form } from 'antd';
 import axios from '../utils/axios';
+import { useNavigate } from 'react-router-dom';
 
 const Cars = () => {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [cars, setCars] = useState([]);
   const [totalCars, setTotalCars] = useState(0);
@@ -22,6 +24,9 @@ const Cars = () => {
       });
       setCategories(response?.data?.categories);
     } catch (err) {
+      if (err?.response?.data?.message === "Unauthorized") {
+        navigate("/login")
+      }
       message.error('Error fetching categories');
     }
   };
@@ -49,7 +54,7 @@ const Cars = () => {
       setCars([...cars, newCarWithCategory]);
       setNewCar({ model: '', make: '', color: '', registrationNo: '', category: '' });
       message.success('Car added successfully!');
-      fetchCars(currentPage, pageSize); 
+      fetchCars(currentPage, pageSize);
     } catch (error) {
       console.error('Error adding car:', error);
       message.error('Error adding car');

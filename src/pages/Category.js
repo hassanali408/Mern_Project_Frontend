@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../utils/axios';
 import { Input, Button, Table, Modal, Form, message } from 'antd';
+import { useNavigate } from 'react-router-dom';
 
 const Category = () => {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [totalCategories, setTotalCategories] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -21,16 +23,20 @@ const Category = () => {
       const response = await axios.get(`/categories/get?page=${page}&size=${size}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
+  
       setCategories(response.data.categories);
       setTotalCategories(response.data.totalCategories);
     } catch (error) {
+      if(error?.response?.data?.message === "Unauthorized"){
+        navigate("/login")
+      }
       console.error('Error fetching categories:', error);
     }
   };
 
   const handleCreateCategory = async () => {
     try {
-      const response = await axios.post('/categories/create', { name: newCategory }, {
+      await axios.post('/categories/create', { name: newCategory }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       setNewCategory('');

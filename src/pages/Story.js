@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Input, Button, Table, message } from 'antd';
 import axios from '../utils/axios';
+import { useNavigate } from 'react-router-dom';
 
 const Story = () => {
+  const navigate = useNavigate();
   const [prompt, setPrompt] = useState('');
   const [story, setStory] = useState('');
   const [history, setHistory] = useState([]);
@@ -19,6 +21,9 @@ const Story = () => {
       setHistory(response?.data?.stories);
       setTotalStories(response?.data?.totalStories);
     } catch (err) {
+      if(err?.response?.data?.message === "Unauthorized"){
+        navigate("/login")
+      }
       message.error('Error fetching story history');
     }
   };

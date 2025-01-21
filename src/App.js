@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, {useState } from 'react';
 import { Layout, Menu, Button, message } from 'antd';
-import { Link, Routes, Route, BrowserRouter as Router, useLocation, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Routes, Route, BrowserRouter as Router, useNavigate,useLocation,Navigate  } from 'react-router-dom';
 import { HomeOutlined, AppstoreAddOutlined, EditOutlined } from '@ant-design/icons';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -25,36 +25,16 @@ const App = () => {
 };
 
 const ProtectedLayout = () => {
-    const [collapsed, setCollapsed] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(null);
+    const location = useLocation();
     const navigate = useNavigate();
+    const [collapsed, setCollapsed] = useState(false);
+    const isAuthRoute = location.pathname === "/login" || location.pathname === "/signup";
+    const token = localStorage.getItem('token');
 
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    setIsAuthenticated(false);
-                    return;
-                }
-                const response = await axios.post('/auth/validate',{token:token}, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setIsAuthenticated(response?.data?.status === 'ok');
-            } catch (error) {
-                console.error('Token validation failed:', error);
-                setIsAuthenticated(false);
-            }
-        };
+    if (!token && !isAuthRoute) {
+        return <Navigate to="/login" replace />;
+    }
 
-        checkAuth();
-    }, []);
-
-    useEffect(() => {
-        if (isAuthenticated === false) {
-            navigate('/login', { replace: true });
-        }
-    }, [isAuthenticated, navigate]);
 
     const handleLogout = async (e) => {
         e.preventDefault();
@@ -73,11 +53,10 @@ const ProtectedLayout = () => {
         }
     };
 
-    if (isAuthenticated === null) {
-        return <div>Loading...</div>;
-    }
+
 
     return (
+        !isAuthRoute && (
         <Layout style={{ minHeight: '100vh' }}>
             <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
                 <div className="logo" style={{ height: 64, textAlign: 'center', color: 'white', lineHeight: '64px' }}>
@@ -118,6 +97,7 @@ const ProtectedLayout = () => {
                 </Content>
             </Layout>
         </Layout>
+        )
     );
 };
 
