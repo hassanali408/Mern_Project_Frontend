@@ -74,7 +74,6 @@ const ProtectedLayout = () => {
     };
 
     if (isAuthenticated === null) {
-        // Show loading screen while checking authentication
         return <div>Loading...</div>;
     }
 

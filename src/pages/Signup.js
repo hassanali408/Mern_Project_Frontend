@@ -1,6 +1,6 @@
-// src/pages/Signup.js
+
 import React from 'react';
-import { Typography } from 'antd';
+import { message, Typography } from 'antd';
 import SignupForm from '../components/Auth/SignupForm';
 import axios from '../utils/axios';
 import { useNavigate } from 'react-router-dom';
@@ -14,9 +14,11 @@ const Signup = () => {
         try {
             const response = await axios.post('/auth/signup', values);
             if (response?.data?.status === "ok") {
+                message.success('User Signup successfully!');
                 navigate('/login')
             }
         } catch (error) {
+            message.error(error?.response?.data?.message);
             console.error('Signup failed:', error);
         }
     };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography } from 'antd';
+import { message, Typography } from 'antd';
 import axios from '../utils/axios';
 import LoginForm from '../components/Auth/loginForm';
 import { useNavigate } from 'react-router-dom';
@@ -12,10 +12,12 @@ const Login = () => {
       const response = await axios.post('/auth/login', values);
       if(response?.data?.token){
         localStorage.setItem("token",response?.data?.token)
+        message.success('User LoggedIn successfully!');
         navigate('/');
       }
 
     } catch (error) {
+      message.error(error?.response?.data?.message);
       console.error('Login failed:', error);
     }
   };
